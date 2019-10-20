@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { 
     Text,
     // Platform,
+    Image,
     StyleSheet,
     View,
     Dimensions,
@@ -11,11 +12,7 @@ import {
 // import * as Permissions from 'expo-permissions';
 import MapView, { Marker } from 'react-native-maps';
 import { useSelector } from 'react-redux';
-
-import redPin from '../assets/redPin.png';
-import yellowPin from '../assets/yellowPin.png';
-import greenPin from '../assets/greenPin.png';
-import greyPin from '../assets/greyPin.png';
+import axios from 'axios';
 
 let markerRender = 'Loading...';
 
@@ -46,40 +43,72 @@ const MapScreen = (props) => {
     });
 
     const avgRating = (ratings, id) => {
-        let sum = 0;
-        let len = 0;
-        ratings
-            .filter(rating => rating.identifier === id)
-            .map(rating => sum += rating.rating)
-            len = ratings.length - 1;
-            switch(parseInt(sum / len)) {
+        const filtRate = ratings.filter(rating => rating.identifier === id)
+        const average = filtRate.reduce((total, next) => total + next.rating, 0 ) / filtRate.length;
+            switch(parseInt(average)) {
                 case 1:
+                    return 'red';
                 case 2:
+                    return 'red';
                 case 3:
-                    return redPin;
+                    return 'red';
                 case 4:
+                    return 'yellow';
                 case 5:
+                    return 'yellow';
                 case 6:
+                    return 'yellow';
                 case 7:
-                    return yellowPin;
+                    return 'yellow';
                 case 8:
+                    return 'green';
                 case 9:
+                    return 'green';
                 case 10:
-                    return greenPin;
+                    return 'green';
                 default:
-                    return greyPin;
-
-            }
+                    return 'grey';
+        }
     };
 
+    let lastTap = null;
+
+    const { navigate } = props.navigation;
+
+    const handleDoubleTap = (id,mapType,lat,lon) => {
+        const now = Date.now();
+        const DOUBLE_PRESS_DELAY = 800;
+        if(lastTap && ( now - lastTap ) < DOUBLE_PRESS_DELAY) {
+            navigate('Question', {mapType ,id});
+            Linking.openURL(`http://maps.apple.com/?daddr=${lat},${lon}&z=10&dirflg=w`)
+            setTimeout(() => {
+                axios.post('https://exp.host/--/api/v2/push/send', 
+                {
+                    "to" : "ExponentPushToken[L88dXHP8F2sAMpQCmyggwX]",
+                    "title": "Don't Forget to Leave a Rating",
+                    "body": "Tell Us How Your Experience Was!"
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' }
+                })
+            },2000
+            );
+        }else {
+            lastTap = now;
+        }
+    }
+
+    const accessible = description => (
+        description.includes('Wheelchair') ? '♿' : ''
+    )
+
     const mapType = props.navigation.getParam('mapType', '');
-    console.log(mapType);
   if(mapType == 'restroom') 
   {
-    // console.log(mapType);
     const ratings = useSelector(state => state.restroomRating.ratings);
 
     const markers = useSelector(state => state.restrooms.restrooms.marker_list);
+
     markerRender = markers.map(({ marker: { oid }, marker: { lat }, marker: { lon }, marker: { category }, marker: { name } }) => (
         <Marker
             key = { oid }
@@ -89,24 +118,24 @@ const MapScreen = (props) => {
                 latitude: parseFloat(lat),
                 longitude: parseFloat(lon)
             } }
-            image = { avgRating(ratings, oid) }
-            onPress = {() => Linking.openURL(`http://maps.apple.com/?daddr=${parseFloat(lat)},${parseFloat(lon)}&z=10&dirflg=w`)}
+            pinColor = { avgRating(ratings, oid) }
+            onPress = {() => handleDoubleTap(oid, 'restroom', parseFloat(lat), parseFloat(lon))}
         />
         ))
   }else if(mapType == 'water') {
       const ratings = useSelector(state => state.waterRating.ratings)
-
       const markers = useSelector(state => state.stations.stations);
-      markerRender = markers.map(({ objectid, position, signname, the_geom: { coordinates } }) => (
+      markerRender = markers.map(({ objectid, position, descriptio, signname, the_geom: { coordinates } }) => (
         <Marker 
             key = { objectid }
-            title = { signname }
+            title = { signname + ' ' + accessible(descriptio) }
             description = { position }
             coordinate = { {
                 latitude: parseFloat(coordinates[1]),
                 longitude: parseFloat(coordinates[0])
             } }
-            image = { avgRating(ratings, objectid) }
+            pinColor = { avgRating(ratings, objectid) }
+            onPress = {() => handleDoubleTap(objectid, 'water', coordinates[1], coordinates[0])}
         />
 
       ));

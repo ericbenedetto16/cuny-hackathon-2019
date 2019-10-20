@@ -15,7 +15,8 @@ export const getRestroomLocations = () => dispatch => {
 }
 
 export const getRestroomRatings = () => dispatch => {
-    axios.get('http://10.38.128.80:5000/api/v1/restrooms')
+    // axios.get('http://10.38.128.80:5000/api/v1/restrooms')
+    axios.get('http://192.168.1.246:5000/api/v1/restrooms')
         .then(res =>
             dispatch({
                 type: GET_RESTROOM_RATINGS,

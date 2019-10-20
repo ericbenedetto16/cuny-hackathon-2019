@@ -15,7 +15,8 @@ export const getStationLocations = () => dispatch => {
 }
 
 export const getStationRatings = () => dispatch => {
-    axios.get('http://10.38.128.80:5000/api/v1/refills')
+    // axios.get('http://10.38.128.80:5000/api/v1/refills')
+    axios.get('http://192.168.1.246:5000/api/v1/refills')
         .then(res =>
             dispatch({
                 type: GET_STATION_RATINGS,

@@ -3,16 +3,8 @@ const Schema = mongoose.Schema;
 
 // Create Schema
 const WaterRatingSchema = new Schema({
-    location: {
-        type: Object,
-        required: true
-    },
     rating: {
         type: Number,
-        required: true
-    },
-    name: {
-        type: String,
         required: true
     },
     identifier: {
